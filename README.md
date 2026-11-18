@@ -4,6 +4,32 @@ A tiny Flask app for a Kubernetes introduction. It shows three basics:
 health probes, configuration via env vars, credentials from a Secret, and
 config files from a mounted ConfigMap.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    client([Client])
+
+    subgraph k8s[Kubernetes cluster]
+        svc[Service]
+        subgraph pod[Pod: demo-app]
+            app["Flask app :8080<br/>/ · /config · /healthz · /readyz"]
+        end
+        secret[(Secret<br/>DB_* env vars)]
+        cm[(ConfigMap<br/>file: greeting)]
+        kubelet{{kubelet probes}}
+    end
+
+    db[(PostgreSQL)]
+
+    client -->|HTTP| svc --> app
+    secret -.->|envFrom| app
+    cm -.->|volume at /etc/demo-app| app
+    kubelet -->|liveness: /healthz| app
+    kubelet -->|readiness: /readyz| app
+    app -->|"/ and /readyz"| db
+```
+
 ## Endpoints
 
 | Path       | Purpose                                          | Touches DB |
